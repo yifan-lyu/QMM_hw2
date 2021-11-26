@@ -1,0 +1,60 @@
+This is the steady state of the baseline inventory model in Khan and Thomas (2007).  It is the same model as in case27ss.txt  
+Model parameters for steady state file are listed below.
+alpha
+0.37394200000000
+thetam
+0.49910000000000
+thetan
+0.32753445220000
+Atech
+1.00
+delta
+0.01727073350000
+zbar 
+1.0032
+abeta
+1.0
+bbeta
+1.0
+ziupperbar I/S target is 0.7155
+0.2198
+masspoint
+0.0
+outputcost
+0.0
+beta
+0.98400984009840
+Apreference
+2.12795000000000
+storage cost (as a fraction of the value of inventories)
+0.0287
+Sbound
+0.0 2.5
+NS
+25
+switch
+1.0
+precisionv
+0.000001
+precisionc for S
+0.00000001
+precisiond for M
+0.0000000001
+Jmax
+10
+indicator
+not-a-knot
+SVECV
+0.76 0.74
+SVECE1
+0.9 0.74
+resultfil
+BaselineInvSSResult.txt
+startfile for dynamic inventory programs
+BaselineInvSS
+plow suggestion
+3.2
+phigh suggestion
+3.3
+logspace
+25.0

@@ -1,0 +1,70 @@
+Dynamic Inventory Model involving K/Y = 1.414552159, I/K = 0.069082934, Labour Share = 0.64 (QM/Y = 0.4991 with real rate of 0.065)corrected for K/y ratio
+I/S = 0.7155 case
+alpha
+0.37394200000000
+thetam
+0.49910000000000
+thetan
+0.32753445220000
+Atech
+1.0
+delta
+0.01727073350000
+abeta
+1.00
+bbeta
+1.00
+ziupperbar
+0.2198
+masspoint
+0.0
+outputcost
+0.0
+beta
+0.98400984009840
+Apreference
+2.12795000000000
+storage cost
+1.196306541945007E-002
+Sbound
+0.0 2.5
+NS 5/10 worked well
+50
+NS0
+50
+KMbound  
+1.0 2.25
+NKM
+5
+SMbound
+0.25 0.75
+NSM
+5
+switch
+1.0
+precisionv innerV will be .1 times this number
+0.0001
+precisionm
+0.00000000001
+precisionS
+0.0000000001
+precisionp
+0.0000001
+precisionq
+0.00000001
+simlength
+10000
+Jmax
+10
+pbounds (relative)
+0.98 1.15
+qbounds
+0.3 0.5
+resultfile
+BaselineInventory
+shockfile
+Benchmark0
+initialfile
+BaselineInvss
+numbertry
+5

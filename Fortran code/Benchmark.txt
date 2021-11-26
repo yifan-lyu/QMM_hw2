@@ -1,0 +1,34 @@
+This is the Benchmark model without delivery costs and thus inventories for Khan and Thomas (2007)
+Model parameters are listed below
+alpha
+0.37394200000000
+thetam
+0.49910000000000
+thetan
+0.32753445220000
+Atech
+1.0
+delta
+0.01727073350000
+rhoz 2 shock version with no second shock
+0.95599589201250 0.95599589201250
+stde (stdz should be 0.04683643964749)
+0.01517317850260 0.0
+beta
+0.98400984009840
+Apref
+2.12795000000000
+kbound (0.25 gaps on either end of simulated capital bounds)
+1.6 2.45
+Nz (use Tauchen and 2.0)
+9 1
+Nk
+25
+switch
+1.0
+precisionv
+0.00001
+precisionc
+0.000000001
+resultfile
+Benchmark0
