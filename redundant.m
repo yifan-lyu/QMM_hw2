@@ -2,7 +2,13 @@
 % Redundant line storage
 % Not part of the Main.m
 
+% fsolve or golden search works but inefficient
 
+%for i = 1:N_s
+    %maximand = @(xi) -p*w*xi + V.Va - (-p*q*S(i) + V.V1(i));
+    %xi_tilde(i) = fsolve(maximand,0.5);
+%    xi_tilde(i) = linsolve(-p*w, -V.Va -p*q*S(i) + V.V1(i));
+%end
 
 
 %{

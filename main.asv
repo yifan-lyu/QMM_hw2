@@ -9,6 +9,7 @@ cd '/Users/frankdemacbookpro/Dropbox/SSE_yr2/QMMII/hw2'
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.2 Calibration and parameters
+
 beta    = 0.9840;
 eta     = 2.1280;
 alpha   = 0.3739;
@@ -53,8 +54,8 @@ sol = struct(); % store optimised solutions
 % 1.4.1 Optimal inventory level
 
 V.V1 = S.^0.5; % initial guess of V1
-[V.Va, ind] = max( -p*q*S + V.V1); % value of adjusting (not precise)
-%sol.S = S(ind);     % optimal inventory target level (not used)
+[V.Va, ind] = max( -p*q*S + V.V1); % value of adjusting
+%sol.S = S(ind);     % optimal inventory target level
 
 
 % 1.4.2 Optimal sub-period production m(s1)
@@ -63,8 +64,7 @@ V.V1 = S.^0.5; % initial guess of V1
 V.EV0 = p^(1/(1-theta_m))*(1-theta_n)*(theta_n/eta)^(theta_n/(1-theta_n))...
     *S.^(theta_m/(1-theta_n));
 
-distance = inf;
-while distance > eps_vfi
+for l = 1:100
 % create old value function
 EV0_old = V.EV0;
 V1_old = V.V1;
@@ -106,11 +106,21 @@ V.Va = -V.Va;
 
 % 1.5 Inner loop II: iterate to solve the firm's value functions
 
-% accurate solution: use linsolve(A,B), where Ax = B, x is a vector
+% accurate solution: use linsolve: linsolve(A,B)
+% fsolve or golden search works but inefficient
+
+%for i = 1:N_s
+    %maximand = @(xi) -p*w*xi + V.Va - (-p*q*S(i) + V.V1(i));
+    %xi_tilde(i) = fsolve(maximand,0.5);
+%    xi_tilde(i) = linsolve(-p*w, -V.Va -p*q*S(i) + V.V1(i));
+%end
+
 xi_tilde = linsolve(-p*w, -V.Va -p*q*S + V.V1);
 
+%func.figplot([1:25],V.V1); % check graph
 % correct for abnormal value -> get final xi threshold given each s.
 xi_T = min(max(0,xi_tilde),xi_bar);
+
 
 % C.D.F given each s
 H_s = (xi_T - xi_lbar)/(xi_bar - xi_lbar);
@@ -123,12 +133,17 @@ V.EV0 = H_s.*(p*q*S) - p*w*(xi_T-xi_lbar)/(xi_bar - xi_lbar) + (1-H_s).*V.V1;
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
 fprintf("distance = %.7f \n", distance);
 
-end % end of VFI
+if distance < eps_vfi
 fprintf("convergence reached in inner loop")
+break
+end
+
+end
 
 
-% check if it the case in graph
+
 %{
+% check if it the case in graph
 func.figplot(S,V.V1);
 hold on;
 func.figplot(S,V.V1_dep);
@@ -137,10 +152,3 @@ ylabel('Value function');
 xlabel('Inventory level');
 func.figsave('VF_comparison')
 %}
-
-
-
-% 1.5 Inner loop III: Inventories sequence
-
-
-
