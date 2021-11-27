@@ -65,9 +65,11 @@ V.EV0 = p^(1/(1-theta_m))*(1-theta_n)*(theta_n/eta)^(theta_n/(1-theta_n))...
 
 distance = inf;
 tol_iter = 0;
+
 while distance > eps_vfi
+    
 tol_iter = tol_iter + 1;
-% create old value function
+% create old value function to compare distance
 EV0_old = V.EV0;
 V1_old = V.V1;
 
@@ -89,6 +91,7 @@ V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(s1 - m) - w*sol.n(m))...
 %func.figplot([0:0.05:s1],V.V1_func([0:0.05:s1])  );
 
 %Golden Search, take opposite of the V1_func for minimum
+% the upper bound of m is s1
 [sol.m(iter), fmin] = func.goldSearch(@(m) -V.V1_func(m),S(1),s1,eps_gs);
 
 % return the maximised firm value function
@@ -100,12 +103,14 @@ end
 
 assert(all(V.V1_dep-1e-7<=V.V1),'Firm Wants to Deplete Inventories, Bug likely!')
 
-% note that use corsened grid leads to non-convergence -> spline is used
-Va_seek = griddedInterpolant(S, -p*q*S + V.V1,'spline');
-%func.figplot(S,-p*q*S + V.V1)
+% note that use corsened grid leads to large bias -> spline is used
 
+%Va_seek = max(-p*q*S + V.V1);
+Va_seek = griddedInterpolant(S, -p*q*S + V.V1,'spline');
 [~, V.Va] = func.goldSearch(@(s) -Va_seek(s),S(1),S(end),eps_gs); % update value of adjusting
 V.Va = -V.Va;
+
+%func.figplot(S,-p*q*S + V.V1)
 
 
 % 1.5 Inner loop II: iterate to solve the firm's value functions
@@ -128,26 +133,39 @@ V.EV0 = H_s.*(p*q*S + V.Va) - p*w*integral + (1-H_s).*V.V1;
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
 
 if rem(tol_iter , 50) == 1 % report at every 50 iteration
-fprintf("distance = %.7f \n", distance);
+    fprintf("distance = %.7f \n", distance);
 end
+
 end % end of VFI
-fprintf("convergence reached in inner loop")
+fprintf("convergence reached in inner loop, iteration = %.0f",tol_iter)
 
 
-% check if it the case in graph
-
-func.figplot(S,V.V1);
+%% check if it the case in graph
+figure;
+plot(S,V.V1,'--','linewidth',2.5);
 hold on;
 func.figplot(S,V.V1_dep);
-legend('firm store inventory','firm deplete inventory');
-ylabel('Value function, V1');
+func.figplot(S,V.EV0);
+legend('firm store inventory, V1','firm deplete inventory','EV0');
+ylabel('Value function');
 xlabel('Inventory level');
-func.figsave('VF_comparison')
+func.figsave('VF_comparison');
+hold off;
 
-
+figure;
+func.figplot(S, xi_T);
+hold on;
+func.graphfill(S,zeros(1,numel(S)),xi_T);
+ylabel('xi threshold');
+xlabel('Inventory level');
+txt1 = 'adjust inventory';
+t1 = text(S(end-1),xi_T(end-1),txt1);
+txt2 = 'Not adjust inventory';
+t2 = text(S(10),xi_T(10),txt2);
+t1.FontSize = 16; t2.FontSize = 16;
+func.figsave('xi_threshold');
 
 
 % 1.5 Inner loop III: Inventories sequence
-
 
 
