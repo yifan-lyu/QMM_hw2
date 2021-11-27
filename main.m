@@ -40,7 +40,7 @@ Int_p   = [3.2,3.3]; % initial bound for p star
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.3 Known equilibrium object
 
-p = 3.25; % guess an output price
+p = 3; % guess an output price
 w = eta/p;
 q = p^(alpha-1)*z_bar^(-1)*( (1-beta*(1-delta)) / (beta*alpha) )^alpha...
     * ( eta/(1-alpha) )^(1-alpha);
@@ -64,7 +64,9 @@ V.EV0 = p^(1/(1-theta_m))*(1-theta_n)*(theta_n/eta)^(theta_n/(1-theta_n))...
     *S.^(theta_m/(1-theta_n));
 
 distance = inf;
+tol_iter = 0;
 while distance > eps_vfi
+tol_iter = tol_iter + 1;
 % create old value function
 EV0_old = V.EV0;
 V1_old = V.V1;
@@ -124,22 +126,24 @@ V.EV0 = H_s.*(p*q*S + V.Va) - p*w*integral + (1-H_s).*V.V1;
 
 % define distance
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
-fprintf("distance = %.7f \n", distance);
 
+if rem(tol_iter , 50) == 1 % report at every 50 iteration
+fprintf("distance = %.7f \n", distance);
+end
 end % end of VFI
 fprintf("convergence reached in inner loop")
 
 
 % check if it the case in graph
-%{
+
 func.figplot(S,V.V1);
 hold on;
 func.figplot(S,V.V1_dep);
 legend('firm store inventory','firm deplete inventory');
-ylabel('Value function');
+ylabel('Value function, V1');
 xlabel('Inventory level');
 func.figsave('VF_comparison')
-%}
+
 
 
 
