@@ -84,10 +84,10 @@ V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(s1 - m) - w*sol.n(m))...
           + beta*EV0_interp(s1-m);
 
 %check if the graph of V1 looks concave!
-%func.figplot([0:0.05:s1],V.V1_func([0:0.05:s1]))
+%func.figplot([0:0.05:s1],V.V1_func([0:0.05:s1])  );
 
 %Golden Search, take opposite of the V1_func for minimum
-[sol.m(iter), fmin] = func.goldSearch(@(m) -V.V1_func(m),0,s1,eps_gs);
+[sol.m(iter), fmin] = func.goldSearch(@(m) -V.V1_func(m),S(1),s1,eps_gs);
 
 % return the maximised firm value function
 V.V1(iter) = -fmin;
@@ -99,8 +99,10 @@ end
 assert(all(V.V1_dep-1e-7<=V.V1),'Firm Wants to Deplete Inventories, Bug likely!')
 
 % note that use corsened grid leads to non-convergence -> spline is used
-V1_interp = griddedInterpolant(S, V.EV0,'spline');
-[~, V.Va] = func.goldSearch(@(s) -V1_interp(s),S(1),S(end),eps_gs); % update value of adjusting
+Va_seek = griddedInterpolant(S, -p*q*S + V.V1,'spline');
+%func.figplot(S,-p*q*S + V.V1)
+
+[~, V.Va] = func.goldSearch(@(s) -Va_seek(s),S(1),S(end),eps_gs); % update value of adjusting
 V.Va = -V.Va;
 
 
@@ -117,7 +119,8 @@ H_s = (xi_T - xi_lbar)/(xi_bar - xi_lbar);
 
 % update new E(V0)
 %       adjust value        + not adjust value
-V.EV0 = H_s.*(p*q*S) - p*w*(xi_T-xi_lbar)/(xi_bar - xi_lbar) + (1-H_s).*V.V1;
+integral = 0.5* (xi_T.^2 - xi_lbar^2) / (xi_bar - xi_lbar);
+V.EV0 = H_s.*(p*q*S + V.Va) - p*w*integral + (1-H_s).*V.V1;
 
 % define distance
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
