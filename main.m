@@ -79,9 +79,11 @@ EV0_interp = griddedInterpolant(S, V.EV0,'spline');
 % solve for V1(s)
 
 sol.n = @(m) ((theta_n*p*m.^theta_m)/eta).^(1/(1-theta_n)); % optimal n choice
-iter = 0;
-sol.m = nan(1,N_s); % solution of optimal capital under 25 different inventory level
+sol.m = nan(1,N_s); % solution of optimal capital under 25 different inventory
+sol.s = nan(1,1); % solution to optional level of inventory (scalar)
 
+
+iter = 0;
 for s1 = S % for each of the 25 inventory level (S)
 iter = iter + 1;
 V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(s1 - m) - w*sol.n(m))...
@@ -107,7 +109,7 @@ assert(all(V.V1_dep-1e-7<=V.V1),'Firm Wants to Deplete Inventories, Bug likely!'
 
 %Va_seek = max(-p*q*S + V.V1);
 Va_seek = griddedInterpolant(S, -p*q*S + V.V1,'spline');
-[~, V.Va] = func.goldSearch(@(s) -Va_seek(s),S(1),S(end),eps_gs); % update value of adjusting
+[sol.s, V.Va] = func.goldSearch(@(s) -Va_seek(s),S(1),S(end),eps_gs); % update value of adjusting
 V.Va = -V.Va;
 
 %func.figplot(S,-p*q*S + V.V1)
@@ -121,13 +123,13 @@ xi_tilde = linsolve(-p*w, -V.Va -p*q*S + V.V1);
 % correct for abnormal value -> get final xi threshold given each s.
 xi_T = min(max(0,xi_tilde),xi_bar);
 
-% C.D.F given each s
+% C.D.F given each s, prob to adjust inventory
 H_s = (xi_T - xi_lbar)/(xi_bar - xi_lbar);
 
 % update new E(V0)
 %       adjust value        + not adjust value
 integral = 0.5* (xi_T.^2 - xi_lbar^2) / (xi_bar - xi_lbar);
-V.EV0 = H_s.*(p*q*S + V.Va) - p*w*integral + (1-H_s).*V.V1;
+V.EV0 = H_s.*((p*q*S + V.Va) - p*w*integral) + (1-H_s).*V.V1;
 
 % define distance
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
@@ -166,6 +168,70 @@ t1.FontSize = 16; t2.FontSize = 16;
 func.figsave('xi_threshold');
 
 
-% 1.5 Inner loop III: Inventories sequence
+%% 1.6 Inner loop III: Inventories sequence
+clc;
+H_s_func = griddedInterpolant(S, H_s,'spline');
+%func.figplot([0:0.1:2.5],H_s_func([0:0.1:2.5])) % a smoothed curve!
+
+H_s_share  = nan(1,1);  % optimal share of adjustment firms (size uncertain)
+sol.s_star = sol.s; % optimal inventory (size uncertain)
+m          = nan(1,1);  % optimal capital (size uncertain)
+
+for j = 1:J_max
+% 1.6.1: solve using 1.4.2, find share of firm adjusting
+V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(sol.s_star(j) - m) - w*sol.n(m))...
+          + beta*EV0_interp(sol.s_star(j) -m);
+
+% the upper bound of m is s1
+[m(j), ~] = func.goldSearch(@(m) -V.V1_func(m),S(1),sol.s_star(j),eps_gs);
+
+% return the maximised firm value function
+%V.V1(iter) = -fmin;
+
+% 1.6.3 if starting inventory is too small
+if sol.s_star(j) < eps_0
+    m(j) = sol.s_star(j);
+end
+
+% 1.6.2 new inventory
+sol.s_star(j+1) = sol.s_star(j) - m(j);
+
+
+% 1.6.4 share of firm adjusing
+H_s_share(j) = H_s_func(sol.s_star(j)); % share of firms that adjust
+
+
+% 1.6.5
+if sol.s_star(j) < eps_0 % stop loop if s* below threshold
+    J_max = j;
+    fprintf("J_max should be %.0f \n", J_max)
+    break
+end
+
+end
+
+% fix the tiny inaccurate of spline interpolation: share >=0
+H_s_share(H_s_share<0) = 0;
+
+
+% 1.6.6 % begining of period inventory stock and associated policies
+sol.s_star_policy = sol.s_star(2:end);
+sol.s_star        = sol.s_star(1:end-1);
+
+
+func.figplot(sol.s_star,H_s_share)
+
+%{
+func.figplot(sol.s_star,sol.s_star_policy);
+ylabel('Begining of period inventory stock');
+xlabel('Optimal end of period inventory stock');
+func.figsave('Policy_166');
+%}
+
+%% 1.7 Inner loop (I) compute final good distribution
+
+
+
+
 
 
