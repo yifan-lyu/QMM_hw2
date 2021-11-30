@@ -175,7 +175,7 @@ H_s_func = griddedInterpolant(S, H_s,'spline');
 
 H_s_share  = nan(1,1);  % optimal share of adjustment firms (size uncertain)
 sol.s_star = sol.s; % optimal inventory (size uncertain)
-m          = nan(1,1);  % optimal capital (size uncertain)
+sol.m      = nan(1,1);  % optimal capital (size uncertain)
 
 for j = 1:J_max
 % 1.6.1: solve using 1.4.2, find share of firm adjusting
@@ -183,23 +183,21 @@ V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(sol.s_star(j) - m) - w*sol.n(m))...
           + beta*EV0_interp(sol.s_star(j) -m);
 
 % the upper bound of m is s1
-[m(j), ~] = func.goldSearch(@(m) -V.V1_func(m),S(1),sol.s_star(j),eps_gs);
+[sol.m(j), ~] = func.goldSearch(@(m) -V.V1_func(m),S(1),sol.s_star(j),eps_gs);
 
 % return the maximised firm value function
 %V.V1(iter) = -fmin;
 
 % 1.6.3 if starting inventory is too small
 if sol.s_star(j) < eps_0
-    m(j) = sol.s_star(j);
+    sol.m(j) = sol.s_star(j);
 end
 
 % 1.6.2 new inventory
-sol.s_star(j+1) = sol.s_star(j) - m(j);
-
+sol.s_star(j+1) = sol.s_star(j) - sol.m(j);
 
 % 1.6.4 share of firm adjusing
 H_s_share(j) = H_s_func(sol.s_star(j)); % share of firms that adjust
-
 
 % 1.6.5
 if sol.s_star(j) < eps_0 % stop loop if s* below threshold
@@ -218,9 +216,12 @@ H_s_share(H_s_share<0) = 0;
 sol.s_star_policy = sol.s_star(2:end);
 sol.s_star        = sol.s_star(1:end-1);
 
-
+%{
 func.figplot(sol.s_star,H_s_share)
-
+ylabel('Begining of period inventory stock');
+xlabel('share of firms that adjust');
+func.figsave('Firmadjust');
+%}
 %{
 func.figplot(sol.s_star,sol.s_star_policy);
 ylabel('Begining of period inventory stock');
@@ -228,10 +229,37 @@ xlabel('Optimal end of period inventory stock');
 func.figsave('Policy_166');
 %}
 
-%% 1.7 Inner loop (I) compute final good distribution
+% 1.7 Inner loop (I) compute final good distribution
 
+% share of firms not adjust from 1->Jmax
+Cumu_notadjust = [1,cumprod(1-H_s_share)];
 
+% just a geometric distribution
+density = Cumu_notadjust(1:end-1).*H_s_share;
 
+% rescale last period adjustment prob -> sum to 1 gauranteed
+density(end) = density(end)/H_s_share(end);
+
+assert(abs(sum(density) - 1)<eps_0,'distirbution does not sum up to 1!' );
+
+% 1.8 market clearning
+
+% 1.8.1 use distribution miu to find demand X
+
+X = sum(  density.*(sol.s - sol.s_star_policy)  );
+
+% 1.8.2 find capital stock and labour
+k_l = w/(z_bar*(1-alpha)); % (k/l)^alpha
+l = X/(z_bar*k_l);
+k = (X/(z_bar*l^(1-alpha)))^(1/alpha);
+
+% 1.8.3 total household consumption
+
+xi_T_func = griddedInterpolant(S, xi_T,'spline');
+integral = sum( density.* (0.5* (xi_T_func(sol.s_star).^2 - xi_lbar^2) / (xi_bar - xi_lbar))   );
+C = sum(G(sol.m,sol.n(sol.m)).*density) - delta*k - w*integral;
+
+p = 1/C % too high!! :( 
 
 
 
