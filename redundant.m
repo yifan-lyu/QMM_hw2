@@ -41,3 +41,16 @@ for i = 1:N_s
 end
 %}
 
+
+
+% the other method to get sta distribution
+%{
+% share of firms not adjust from 1->Jmax at t-1
+Cumu_notadjust = [1,cumprod(1-H_s_share)];
+
+% just a geometric distribution
+density = Cumu_notadjust(1:end-1).*H_s_share;
+
+% rescale last period adjustment prob -> sum to 1 gauranteed
+density(end) = density(end)/H_s_share(end);
+%}

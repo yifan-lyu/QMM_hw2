@@ -42,11 +42,7 @@ Int_p   = [3.2,3.3]; % initial bound for p star
 p_lbar = 3;   % lower bound of price
 p_ubar = 3.5; % upper bound of price
 
-p = 3.25; % guess an output price
-
-dis = inf; % distance between updated price and old price
-while dis > eps_p
-
+p = 3.4; % guess an output price
 w = eta/p;
 q = p^(alpha-1)*z_bar^(-1)*( (1-beta*(1-delta)) / (beta*alpha) )^alpha...
     * ( eta/(1-alpha) )^(1-alpha);
@@ -175,7 +171,7 @@ t1.FontSize = 16; t2.FontSize = 16;
 func.figsave('xi_threshold');
 %}
 
-% 1.6 Inner loop III: Inventories sequence
+%% 1.6 Inner loop III: Inventories sequence
 clc;
 H_s_func = griddedInterpolant(S, H_s,'spline');
 %func.figplot([0:0.1:2.5],H_s_func([0:0.1:2.5])) % a smoothed curve!
@@ -236,7 +232,7 @@ ylabel('Optimal end of period inventory stock');
 func.figsave('Policy_166');
 %}
 
-% 1.7 Inner loop (I) compute final good distribution
+%% 1.7 Inner loop (I) compute final good distribution
 
 % use eigenvector: construct transition matrix
 len = length(H_s_share);
@@ -283,17 +279,15 @@ p_new = 1/C;
 %[r_final, exitflag] = fzero(@(r) findp(r), [p_lbar,p_ubar],options);
 
 % use bisection method
-if p_new < p % new price too low -> lower the guess p
+if p_new > p % when asset too much -> interest rate is too high
     p_ubar = p;
-    p =  0.5*(p_lbar+p);
-else % new price too high -> higher the guess p
-    p_lbar = p;
-    p =  0.5*(p_ubar+p);
+    r0 =  0.5*(r_min+r0);
+else % when asset too little -> interest rate is too low
+    r_min = p;
+    r0 =  0.5*(r_max+r0);
 end
 dis = abs(p_new - p);
-fprintf('distance between two prices is %.9f \n',dis)
 
-end % END of the BIG LOOP
 
 %% write result to latex file and compare table 2
 latex(density,sol.s_star,H_s_share);
