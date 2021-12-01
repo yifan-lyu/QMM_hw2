@@ -43,7 +43,7 @@ end
 
 
 
-% the other method to get sta distribution
+%% other method to get sta distribution
 %{
 % share of firms not adjust from 1->Jmax at t-1
 Cumu_notadjust = [1,cumprod(1-H_s_share)];
@@ -54,3 +54,31 @@ density = Cumu_notadjust(1:end-1).*H_s_share;
 % rescale last period adjustment prob -> sum to 1 gauranteed
 density(end) = density(end)/H_s_share(end);
 %}
+
+
+
+%% other method to update price
+
+%P_new(loop+1) = p_new;
+% use linear approximation
+%if length(P_new) >= 3
+    %slope = (P_new(end-1)-P_new(end))/(P_new(end-2)-P_new(end-1));
+    %p = (-slope*P_new(end-2)+ P_new(end-1))/(1-slope)
+    %[XX, ind] = sort(P_new(1:end-1));
+    %YY = P_new(2:end);
+    %YY = YY(ind);
+    %f_x = griddedInterpolant(XX, YY,'linear','linear');
+    %p = fzero(@(x) f_x(x)-x, p)
+%else
+    %p = p+0.05;
+%end
+
+
+%% Fzero to find the p
+clear; clc; tic;
+cd '/Users/frankdemacbookpro/Dropbox/SSE_yr2/QMMII/hw2'
+
+options = optimset('TolX',1e-8);
+
+[p_final, exitflag] = fzero(@(p) main(p), [3.34,3.35],options)
+

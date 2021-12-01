@@ -4,9 +4,9 @@
 % % % % main file % % % % %
 % Stockholm School of Economics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clear; clc;
+clear; clc; tic;
 cd '/Users/frankdemacbookpro/Dropbox/SSE_yr2/QMMII/hw2'
-
+%function price_net = main(p)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.2 Calibration and parameters
 beta    = 0.9840;
@@ -15,7 +15,8 @@ alpha   = 0.3739;
 theta_m = 0.4991;
 theta_n = 0.3275;
 delta   = 0.0173;
-xi_bar  = 0.2198;
+%xi_bar  = 0.2198;
+xi_bar  = 0.3330; % pre-1984 management environment (high cost of adjustment)
 xi_lbar = 0.0000; % not given in the question
 z_bar   = 1.0320;
 sigma   = 0.0287;
@@ -34,18 +35,37 @@ J_max   = 10;     %# period without adjustment
 eps_gs  = 1e-10;  %precision of golden search choice
 eps_vfi = 1e-06;  %precision of value function
 eps_0   = 1e-08;  %below this use all remaining stock
-eps_p   = 1e-08;  %precision of market clearing
-Int_p   = [3.2,3.3]; % initial bound for p star
+eps_p   = 1e-06;  %precision of market clearing
+Int_p   = [3.29,3.4]; % initial bound for p star
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.3 Known equilibrium object
-p_lbar = 3;   % lower bound of price
-p_ubar = 3.5; % upper bound of price
+p_lbar = Int_p(1);   % lower bound of price
+p_ubar = Int_p(2);   % upper bound of price
 
-p = 3.25; % guess an output price
+p = 0.5*(p_lbar+p_ubar); % guess an output price
 
 dis = inf; % distance between updated price and old price
-while dis > eps_p
+
+loop = 0;
+
+%while dis > eps_p
+%for p = 3.3437
+for p = 3.3988
+loop = loop+1;
+
+%{
+if dis < 0.0002 % change the precision tolerance dynamically to speed up
+    eps_vfi = 1e-06;
+    eps_gs  = 1e-10;
+elseif dis < 1e-3
+    eps_vfi = 1e-06;
+    eps_gs  = 1e-07;
+else
+    eps_vfi = 0.005;
+    eps_gs  = 0.0001;
+end
+%}
 
 w = eta/p;
 q = p^(alpha-1)*z_bar^(-1)*( (1-beta*(1-delta)) / (beta*alpha) )^alpha...
@@ -57,23 +77,22 @@ V   = struct(); % store value functions
 sol = struct(); % store optimised solutions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.4.1 Optimal inventory level
-
+%if ~exist('V.V1','var') % reuse old value function to speed up
 V.V1 = S.^0.5; % initial guess of V1
-[V.Va, ind] = max( -p*q*S + V.V1); % value of adjusting (not precise)
-%sol.S = S(ind);     % optimal inventory target level (not used)
-
+V.Va = max( -p*q*S + V.V1); % value of adjusting (not precise)
 
 % 1.4.2 Optimal sub-period production m(s1)
 
 % initial guess of EV0
 V.EV0 = p^(1/(1-theta_m))*(1-theta_n)*(theta_n/eta)^(theta_n/(1-theta_n))...
     *S.^(theta_m/(1-theta_n));
+%end
 
 distance = inf;
 tol_iter = 0;
 
 while distance > eps_vfi
-    
+
 tol_iter = tol_iter + 1;
 % create old value function to compare distance
 EV0_old = V.EV0;
@@ -109,7 +128,7 @@ V.V1(iter) = -fmin;
 V.V1_dep(iter) = p*(G(s1, sol.n(s1)) - w*sol.n(s1)) + beta*EV0_interp(0);
 end
 
-assert(all(V.V1_dep-1e-7<=V.V1),'Firm Wants to Deplete Inventories, Bug likely!')
+%assert(all(V.V1_dep-1e-7<=V.V1),'Firm Wants to Deplete Inventories, Bug likely!')
 
 % note that use corsened grid leads to large bias -> spline is used
 
@@ -140,12 +159,12 @@ V.EV0 = H_s.*((p*q*S + V.Va) - p*w*integral) + (1-H_s).*V.V1;
 % define distance
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
 
-if rem(tol_iter , 50) == 1 % report at every 50 iteration
-    fprintf("distance = %.7f \n", distance);
+if rem(tol_iter , 50) == 1 && tol_iter>200 % report at every 50 iteration
+    fprintf("VFI distance = %.7f \n", distance);
 end
 
 end % end of VFI
-fprintf("convergence reached in inner loop, iteration = %.0f",tol_iter)
+%fprintf("convergence reached in inner loop, iteration = %.0f \n",tol_iter)
 
 
 % check if it the case in graph
@@ -176,7 +195,6 @@ func.figsave('xi_threshold');
 %}
 
 % 1.6 Inner loop III: Inventories sequence
-clc;
 H_s_func = griddedInterpolant(S, H_s,'spline');
 %func.figplot([0:0.1:2.5],H_s_func([0:0.1:2.5])) % a smoothed curve!
 
@@ -215,7 +233,7 @@ end
 
 end
 
-% fix the tiny inaccurate of spline interpolation: share >=0
+% fix the tiny inaccuracy of spline interpolation: share >=0
 H_s_share(H_s_share<0) = 0;
 
 
@@ -265,9 +283,10 @@ assert(abs(sum(density) - 1)<eps_0,'distirbution does not sum up to 1!' );
 X = sum(  density.*(sol.s - sol.s_star_policy)  );
 
 % 1.8.2 find capital stock and labour
-k_l = w/(z_bar*(1-alpha)); % (k/l)^alpha
-l = X/(z_bar*k_l);
-k = (X/(z_bar*l^(1-alpha)))^(1/alpha);
+
+k_l = (1-(1-delta)*beta)/(beta*q*z_bar*alpha); % (k/l) ratio from paper and pen result
+l = X/(z_bar*k_l^alpha);
+k = k_l * l;
 
 % 1.8.3 total household consumption
 
@@ -277,12 +296,12 @@ C = sum(G(sol.m,sol.n(sol.m)).*density) - delta*k - w*integral;
 
 p_new = 1/C;
 
-% use fzero to get equilibrium price
-%options = optimset('TolX',eps_vfi);
-%findp = @(p) func.findprice(p);
-%[r_final, exitflag] = fzero(@(r) findp(r), [p_lbar,p_ubar],options);
+dis = abs(p_new - p);
+price_net = p_new - p;
+fprintf('difference between two prices is %.9f \n', price_net)
 
-% use bisection method
+
+% use modified bisection method
 if p_new < p % new price too low -> lower the guess p
     p_ubar = p;
     p =  0.5*(p_lbar+p);
@@ -290,14 +309,12 @@ else % new price too high -> higher the guess p
     p_lbar = p;
     p =  0.5*(p_ubar+p);
 end
-dis = abs(p_new - p);
-fprintf('distance between two prices is %.9f \n',dis)
+
+fprintf('Current Price = %.5f \n', p)
 
 end % END of the BIG LOOP
 
+toc;
 %% write result to latex file and compare table 2
-latex(density,sol.s_star,H_s_share);
-
-
-
+latex(density,sol.s_star,H_s_share,sol.s);
 

@@ -4,12 +4,12 @@
 % of the original paper
 
 
-function latex(density,s_star,H_s_share)
+function latex(density,s_star,H_s_share,sols)
 clc;
 
 input.extraline = -1; %where to add an extra row line(s) (at the very beginning!)
 input.title = 'Distribution of Final Goods Firms - without aggregate shock';
-input.filename = 'Latex/Table2';
+input.filename = 'Latex/Table3';
 
 input.tableRowLabels = {'Start of period distribution: $\mu(s)$','Start of period inventories: $s$', ... 
     'Fraction adjusting: $H(\xi^{T}(s)$)','production-time inventories: $s_1$', 'production-time distribution'};
@@ -26,7 +26,7 @@ input.data = nan(5,7);
 input.data(1,:) = [nan, density];
 input.data(2,:) = [nan, s_star];
 input.data(3,:) = [nan, H_s_share];
-
+input.data(4,:) = [sols, s_star];
 
 func.latexTable(input);
 
