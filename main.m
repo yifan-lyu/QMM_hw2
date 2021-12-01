@@ -39,8 +39,10 @@ Int_p   = [3.2,3.3]; % initial bound for p star
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.3 Known equilibrium object
+p_lbar = 3;   % lower bound of price
+p_ubar = 3.5; % upper bound of price
 
-p = 3; % guess an output price
+p = 3.25; % guess an output price
 w = eta/p;
 q = p^(alpha-1)*z_bar^(-1)*( (1-beta*(1-delta)) / (beta*alpha) )^alpha...
     * ( eta/(1-alpha) )^(1-alpha);
@@ -229,9 +231,9 @@ xlabel('Optimal end of period inventory stock');
 func.figsave('Policy_166');
 %}
 
-% 1.7 Inner loop (I) compute final good distribution
+%% 1.7 Inner loop (I) compute final good distribution
 
-% share of firms not adjust from 1->Jmax
+% share of firms not adjust from 1->Jmax at t-1
 Cumu_notadjust = [1,cumprod(1-H_s_share)];
 
 % just a geometric distribution
@@ -261,5 +263,9 @@ C = sum(G(sol.m,sol.n(sol.m)).*density) - delta*k - w*integral;
 
 p = 1/C % too high!! :( 
 
+% use fzero to get equilibrium price
+%options = optimset('TolX',eps_vfi);
+%findp = @(p) func.findprice(p);
+%[r_final, exitflag] = fzero(@(r) findp(r), [p_lbar,p_ubar],options);
 
 
