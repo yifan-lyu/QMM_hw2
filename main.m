@@ -15,11 +15,11 @@ alpha   = 0.3739;
 theta_m = 0.4991;
 theta_n = 0.3275;
 delta   = 0.0173;
-%xi_bar  = 0.2198;
-xi_bar  = 0.3330; % pre-1984 management environment (high cost of adjustment)
+xi_bar  = 0.2198;
+%xi_bar  = 0.3330; % pre-1984 management environment (high cost of adjustment)
 xi_lbar = 0.0000; % not given in the question
-z_bar   = 1.0320;
-sigma   = 0.0287;
+z_bar   = 1.0032;
+sigma   = 0.0120;
 
 G = @(m,n) (m.^theta_m) .* (n.^theta_n); % final good production
 F = @(k,l) z_bar * k^alpha * l^(1-alpha); % intermediate good production
@@ -35,8 +35,8 @@ J_max   = 10;     %# period without adjustment
 eps_gs  = 1e-10;  %precision of golden search choice
 eps_vfi = 1e-06;  %precision of value function
 eps_0   = 1e-08;  %below this use all remaining stock
-eps_p   = 1e-06;  %precision of market clearing
-Int_p   = [3.29,3.4]; % initial bound for p star
+eps_p   = 1e-05;  %precision of market clearing
+Int_p   = [3.3,3.4]; % initial bound for p star
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.3 Known equilibrium object
@@ -48,24 +48,26 @@ p = 0.5*(p_lbar+p_ubar); % guess an output price
 dis = inf; % distance between updated price and old price
 
 loop = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Make sure lower and upper bound of p produces opposite sign so bisection
+% works. We narrow the search range a little bit to make this happen
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+while dis > eps_p
+%for p = 3.4
+%for p = 3.3988
 
-%while dis > eps_p
-%for p = 3.3437
-for p = 3.3988
 loop = loop+1;
-
-%{
-if dis < 0.0002 % change the precision tolerance dynamically to speed up
+if dis < 0.0003 % change the precision tolerance dynamically to speed up
     eps_vfi = 1e-06;
     eps_gs  = 1e-10;
 elseif dis < 1e-3
-    eps_vfi = 1e-06;
-    eps_gs  = 1e-07;
+    eps_vfi = 1e-05;
+    eps_gs  = 1e-08;
 else
     eps_vfi = 0.005;
     eps_gs  = 0.0001;
 end
-%}
+
 
 w = eta/p;
 q = p^(alpha-1)*z_bar^(-1)*( (1-beta*(1-delta)) / (beta*alpha) )^alpha...
@@ -310,11 +312,17 @@ else % new price too high -> higher the guess p
     p =  0.5*(p_ubar+p);
 end
 
-fprintf('Current Price = %.5f \n', p)
+fprintf('Current Price = %.5f \n', p);
 
 end % END of the BIG LOOP
 
+fprintf('Complete! # outer loop = %.0f \n',loop);
 toc;
 %% write result to latex file and compare table 2
-latex(density,sol.s_star,H_s_share,sol.s);
+latex(density,sol.s_star,H_s_share,2);
+func.matrix2latex(P, 'Latex/mat.tex','alignment', 'c', 'format', '%-6.3f')
+
+%% under higher xi:
+latex(density,sol.s_star,H_s_share,3);
+
 
