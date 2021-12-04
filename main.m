@@ -35,34 +35,31 @@ J_max   = 10;     %# period without adjustment
 eps_gs  = 1e-10;  %precision of golden search choice
 eps_vfi = 1e-06;  %precision of value function
 eps_0   = 1e-08;  %below this use all remaining stock
-eps_p   = 1e-05;  %precision of market clearing
-Int_p   = [3.3,3.4]; % initial bound for p star
+eps_p   = 1e-05;  %precision of market clearing (low value doesn't converge)
+Int_p   = [3.2,3.4]; % initial bound for p star
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 1.3 Known equilibrium object
 p_lbar = Int_p(1);   % lower bound of price
 p_ubar = Int_p(2);   % upper bound of price
-
 p = 0.5*(p_lbar+p_ubar); % guess an output price
 
 dis = inf; % distance between updated price and old price
-
 loop = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make sure lower and upper bound of p produces opposite sign so bisection
 % works. We narrow the search range a little bit to make this happen
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 while dis > eps_p
-%for p = 3.4
-%for p = 3.3988
+%for p = 3.2
 
 loop = loop+1;
-if dis < 0.0003 % change the precision tolerance dynamically to speed up
+if dis < 0.0001 % change the precision tolerance dynamically to speed up
     eps_vfi = 1e-06;
     eps_gs  = 1e-10;
 elseif dis < 1e-3
     eps_vfi = 1e-05;
-    eps_gs  = 1e-08;
+    eps_gs  = 1e-07;
 else
     eps_vfi = 0.005;
     eps_gs  = 0.0001;
@@ -132,9 +129,6 @@ end
 
 %assert(all(V.V1_dep-1e-7<=V.V1),'Firm Wants to Deplete Inventories, Bug likely!')
 
-% note that use corsened grid leads to large bias -> spline is used
-
-%Va_seek = max(-p*q*S + V.V1);
 Va_seek = griddedInterpolant(S, -p*q*S + V.V1,'spline');
 [sol.s, V.Va] = func.goldSearch(@(s) -Va_seek(s),S(1),S(end),eps_gs); % update value of adjusting
 V.Va = -V.Va;
@@ -157,6 +151,7 @@ H_s = (xi_T - xi_lbar)/(xi_bar - xi_lbar);
 %       adjust value        + not adjust value
 integral = 0.5* (xi_T.^2 - xi_lbar^2) / (xi_bar - xi_lbar);
 V.EV0 = H_s.*((p*q*S + V.Va) - p*w*integral) + (1-H_s).*V.V1;
+%V.EV0 = H_s.*((p*q*S + V.Va)) - p*w*integral + (1-H_s).*V.V1;
 
 % define distance
 distance = max(   max(abs( V.EV0-EV0_old )) ,  max(abs( V.V1-V1_old ))  );
@@ -198,19 +193,21 @@ func.figsave('xi_threshold');
 
 % 1.6 Inner loop III: Inventories sequence
 H_s_func = griddedInterpolant(S, H_s,'spline');
+optim_m  = griddedInterpolant(S,sol.m,'spline'); % find mapping between S and m
 %func.figplot([0:0.1:2.5],H_s_func([0:0.1:2.5])) % a smoothed curve!
 
 H_s_share  = nan(1,1);  % optimal share of adjustment firms (size uncertain)
-sol.s_star = sol.s; % optimal inventory (size uncertain)
+sol.s_star = sol.s;     % optimal inventory (size uncertain)
 sol.m      = nan(1,1);  % optimal capital (size uncertain)
 
 for j = 1:J_max
 % 1.6.1: solve using 1.4.2, find share of firm adjusting
-V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(sol.s_star(j) - m) - w*sol.n(m))...
-          + beta*EV0_interp(sol.s_star(j) -m);
+%V.V1_func = @(m) p*( G(m, sol.n(m)) - sigma*(sol.s_star(j) - m) - w*sol.n(m))...
+%          + beta*EV0_interp(sol.s_star(j) -m);
 
 % the upper bound of m is s1
-[sol.m(j), ~] = func.goldSearch(@(m) -V.V1_func(m),S(1),sol.s_star(j),eps_gs);
+%[sol.m(j), ~] = func.goldSearch(@(m) -V.V1_func(m),S(1),sol.s_star(j),eps_gs);
+sol.m(j) = optim_m(sol.s_star(j));
 
 % return the maximised firm value function
 %V.V1(iter) = -fmin;
@@ -293,8 +290,9 @@ k = k_l * l;
 % 1.8.3 total household consumption
 
 xi_T_func = griddedInterpolant(S, xi_T,'spline');
-integral = sum( density.* (0.5* (xi_T_func(sol.s_star).^2 - xi_lbar^2) / (xi_bar - xi_lbar))   );
-C = sum(G(sol.m,sol.n(sol.m)).*density) - delta*k - w*integral;
+%integral = sum( density.* (0.5* (xi_T_func(sol.s_star).^2 - xi_lbar^2) / (xi_bar - xi_lbar))   );
+%C = sum(G(sol.m,sol.n(sol.m)).*density) - delta*k - w*integral;
+C = sum(  (G(sol.m,sol.n(sol.m)) - sigma*(sol.s - sol.m)).*density  ) - delta*k;
 
 p_new = 1/C;
 

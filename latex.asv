@@ -7,24 +7,20 @@
 function latex(density,s_star,H_s_share,table)
 % table option select which table you want to produce, either 2 or 3!
 columnNum = size(density,2);
-input.data = nan(5,columnNum);
-if columnNum == 7
-input.tableColLabels = {'Adjustors','1','2','3','4','5','6'};
-input.tableColumnAlignment = 'p{1.4cm}';
-elseif columnNum == 8
-input.tableColLabels = {'Adjustors','1','2','3','4','5','6','7'};
-input.tableColumnAlignment = 'p{1.2cm}';
-elseif columnNum == 9
-input.tableColLabels = {'Adjustors','1','2','3','4','5','6','7','8'};
-input.tableColumnAlignment = 'p{1.1cm}';
-end
+input.data = nan(5,7);
 
 input.extraline = -1; %where to add an extra row line(s) (at the very beginning!)
 input.title = 'Distribution of Final Goods Firms - without aggregate shock';
 if table ==2
 input.filename = 'Latex/Table2';
+input.tableColLabels = {'Adjustors','1','2','3','4','5','6'};
+input.data = nan(5,7);
+input.tableColumnAlignment = 'p{1.4cm}';
 elseif table == 3
 input.filename = 'Latex/Table3';
+input.tableColLabels = {'Adjustors','1','2','3','4','5','6','7'};
+input.data = nan(5,8);
+input.tableColumnAlignment = 'p{1.2cm}';
 end
 
 input.tableRowLabels = {'Start of period distribution: $\mu(s)$','Start of period inventories: $s$', ... 
