@@ -238,9 +238,9 @@ H_s_share(H_s_share<0) = 0;
 
 % drop first value
 sol.s_star = sol.s_star(2:end);
-sol.m_1    = sol.m(1);
 sol.m      = sol.m(2:end);
 H_s_share  = H_s_share(2:end);
+
 
 % 1.6.6 % begining of period inventory stock and associated policies
 sol.s_star_policy = sol.s_star(2:end);
@@ -300,11 +300,11 @@ k = k_l * l;
 %C = sum(G(sol.m,sol.n(sol.m)).*density) - delta*k - w*integral;
 
 % note in the new version of consumption, depending on the level of xi, 
-% household may not adjust. sigma is the inventory storage cost
-G_adj = H_s_share.*(G(sol.m_1,sol.n(sol.m_1)) - sigma*(sol.s_star(1)));
-G_nadj= (1-H_s_share).*(G(sol.m,sol.n(sol.m)) - sigma*(sol.s_star - sol.m));
+% household may not adjust!
+G_adj = H_s_share*G(sol.m,sol.n(sol.m) - 
+G_nadj= (1-H_s_share)*
 
-C = sum(  (G_adj + G_nadj).*density  ) - delta*k;
+C = sum(  (G(sol.m,sol.n(sol.m)) - sigma*(sol.s_star - sol.m)).*density  ) - delta*k;
 
 p_new = 1/C;
 
@@ -330,10 +330,10 @@ end % END of the BIG LOOP
 fprintf('Complete! # outer loop = %.0f \n',loop);
 toc;
 %% write result to latex file and compare table 2
-latex(density,sol.s_star,H_s_share,sol.s,2);
+latex(density,sol.s_star,H_s_share,2);
 func.matrix2latex(P, 'Latex/mat.tex','alignment', 'c', 'format', '%-6.3f')
 
 %% under higher xi:
-latex(density,sol.s_star,sol.s,H_s_share,3);
+latex(density,sol.s_star,H_s_share,3);
 
 

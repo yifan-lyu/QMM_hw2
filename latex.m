@@ -4,11 +4,14 @@
 % of the original paper
 
 
-function latex(density,s_star,H_s_share,table)
+function latex(density,s_star,H_s_share,sols,table)
 % table option select which table you want to produce, either 2 or 3!
-columnNum = size(density,2);
+columnNum = size(density,2)+1;
 input.data = nan(5,columnNum);
-if columnNum == 7
+if columnNum == 6
+input.tableColLabels = {'Adjustors','1','2','3','4','5'};
+input.tableColumnAlignment = 'p{1.5cm}';
+elseif columnNum == 7
 input.tableColLabels = {'Adjustors','1','2','3','4','5','6'};
 input.tableColumnAlignment = 'p{1.4cm}';
 elseif columnNum == 8
@@ -37,14 +40,14 @@ input.dataFormat = {'%.3f'};
 input.firstcolumnwidth = 'p{6cm}';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Add Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %rescale the density from 2-end
-density2 = density(2:end);
-density2 = density2/sum(density2);
+%density2 = density(2:end);
+%density2 = density2/sum(density2);
 
-input.data(1,:) = [nan, density2];
-input.data(2,:) = [nan, s_star(2:end)];
-input.data(3,:) = [nan, H_s_share(2:end)];
-input.data(4,:) = [s_star];
-input.data(5,:) = density;
+input.data(1,:) = [nan, density];
+input.data(2,:) = [nan, s_star];
+input.data(3,:) = [nan, H_s_share];
+input.data(4,:) = [sols, s_star];
+%input.data(5,:) = density;
 
 func.latexTable(input);
 
